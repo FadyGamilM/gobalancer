@@ -114,6 +114,9 @@ func (b *Balancer) HandleRequests() {
 		req := c.Request
 		resp := c.Writer
 
+		// ==> logging
+		log.Info("receiving a new request >> %s", req.URL.String())
+
 		// 1. read request path  = host:port/service_a/rest_of_url
 		// 2. load balance against the service_a and the url will be = host{i}:port{i}/rest_of_url
 		// ==> so we have multiple servers (Hosts) host the same service (aka horizontial scalling)
@@ -134,7 +137,16 @@ func main() {
 	flag.Parse()
 
 	// define the go-balancer configs
-	balancerConfig := &BalancerConfig{}
+	balancerConfig := &BalancerConfig{
+		Services: []Service{
+			{
+				Name: "test-service",
+				Replicas: []string{
+					"http://localhost:8081",
+				},
+			},
+		},
+	}
 
 	// define the go-balancer type
 	gobalancer := NewBalancer(balancerConfig, router)
