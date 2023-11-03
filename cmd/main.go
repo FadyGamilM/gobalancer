@@ -23,25 +23,27 @@ type Service struct {
 }
 
 type BalancerConfig struct {
+	*gin.Engine
 	Services []Service
 	Strategy string
 }
 
 type Balancer struct {
-	*gin.Engine
 	Configs    *BalancerConfig
 	ServerList *ServersList
 }
 
-func NewBalancer(c *BalancerConfig, r *gin.Engine) *Balancer {
+func NewBalancer(c *BalancerConfig) *Balancer {
 	// initialize list of servers with 0 servers
 	servers := make([]*Server, 0)
 
-	// the config consists of strategy and services, we now care about services
-	// for now i will ingore the service name
+	// the config consists of strategy, gin router, and services, we now care about services
+	// => for each idx, service
 	for _, service := range c.Services {
+		// for now i will ingore the service name
+		// => for each idx, replica_url
 		for _, replica := range service.Replicas {
-			// get the url
+			// get the url in the right format
 			replicaURL, err := url.Parse(replica)
 			if err != nil {
 				log.Printf("error trying to parse the replica url >> %v\n", err)
@@ -56,7 +58,6 @@ func NewBalancer(c *BalancerConfig, r *gin.Engine) *Balancer {
 		}
 	}
 	return &Balancer{
-		Engine:  gin.Default(),
 		Configs: c,
 		ServerList: &ServersList{
 			current: uint32(0),
@@ -83,16 +84,14 @@ func (sl *ServersList) NextServer() uint32 {
 	// lets say we have 3 servers
 	// current goes from 0 -> 1 -> 2
 	// now current is 3 so we should forward to the server number 0 (following the round robin)
-	if next >= uint32(len(sl.Servers)) {
-		next = next - uint32(len(sl.Servers))
-	}
+	next = next % uint32(len(sl.Servers)) // handle wraparound using modulo operator
 	return next
 }
 
 func CreateServer(port string, balancer *Balancer) *http.Server {
 	return &http.Server{
 		Addr:    port,
-		Handler: balancer.Engine,
+		Handler: balancer.Configs.Engine,
 	}
 }
 
@@ -110,7 +109,7 @@ func createRouter() *gin.Engine {
 
 func (b *Balancer) HandleRequests() {
 	// the passed method is the same as serverHttp method
-	b.Engine.GET("/", func(c *gin.Context) {
+	b.Configs.Engine.GET("/", func(c *gin.Context) {
 		req := c.Request
 		resp := c.Writer
 
@@ -121,6 +120,7 @@ func (b *Balancer) HandleRequests() {
 		// 2. load balance against the service_a and the url will be = host{i}:port{i}/rest_of_url
 		// ==> so we have multiple servers (Hosts) host the same service (aka horizontial scalling)
 		nextServer := b.ServerList.NextServer()
+		log.Println("the next server index is >> ", nextServer)
 		// 3. forward the request to the proxy of the server
 		b.ServerList.Servers[nextServer].Proxy.ServeHTTP(resp, req)
 	})
@@ -138,6 +138,7 @@ func main() {
 
 	// define the go-balancer configs
 	balancerConfig := &BalancerConfig{
+		Engine: router,
 		Services: []Service{
 			{
 				Name: "demo-service",
@@ -149,7 +150,7 @@ func main() {
 	}
 
 	// define the go-balancer type
-	gobalancer := NewBalancer(balancerConfig, router)
+	gobalancer := NewBalancer(balancerConfig)
 
 	// setup endpoints of the handler
 	gobalancer.HandleRequests()
