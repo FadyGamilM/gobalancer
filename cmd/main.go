@@ -20,6 +20,7 @@ func main() {
 	// parse the flags after all flags are defined and before they are used
 	flag.Parse()
 
+	// TODO => later we will create the config by loading the data from the yaml file, so we have to set the config.Engine manually after retriving it from this configYamlLoader function
 	// define the go-balancer configs
 	balancerConfig := &config.BalancerConfig{
 		Engine: router,

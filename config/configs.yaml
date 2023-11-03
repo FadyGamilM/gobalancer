@@ -1,0 +1,6 @@
+strategy: "roundrobin"
+services:
+- name: "test-service"
+  replicas:
+  - "localhost:8081"
+  - "localhost:8082"
