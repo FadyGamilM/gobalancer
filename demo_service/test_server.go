@@ -32,13 +32,14 @@ func createDemoServer(port string, r *DemoRouter) *http.Server {
 }
 
 func initServer(srv *http.Server) error {
+	log.Println("up and running on port >> ", srv.Addr)
 	return srv.ListenAndServe()
 }
 
 func (r *DemoRouter) setupRouter() {
 	r.Engine.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
-			"response": "demo service is working",
+			"response": c.Request.Host,
 		})
 	})
 }

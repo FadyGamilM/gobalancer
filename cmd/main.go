@@ -114,13 +114,13 @@ func (b *Balancer) HandleRequests() {
 		resp := c.Writer
 
 		// ==> logging
-		log.Info("receiving a new request >> %s", req.URL.String())
+		log.Info("receiving a new request to host [load balancer host] >> %s", req.Host)
 
 		// 1. read request path  = host:port/service_a/rest_of_url
 		// 2. load balance against the service_a and the url will be = host{i}:port{i}/rest_of_url
 		// ==> so we have multiple servers (Hosts) host the same service (aka horizontial scalling)
 		nextServer := b.ServerList.NextServer()
-		log.Println("the next server index is >> ", nextServer)
+		log.Println("forwarding the request to the server number >> ", nextServer)
 		// 3. forward the request to the proxy of the server
 		b.ServerList.Servers[nextServer].Proxy.ServeHTTP(resp, req)
 	})
@@ -144,6 +144,7 @@ func main() {
 				Name: "demo-service",
 				Replicas: []string{
 					"http://localhost:8081",
+					"http://localhost:8082",
 				},
 			},
 		},
