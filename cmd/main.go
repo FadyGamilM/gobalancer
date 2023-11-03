@@ -140,7 +140,7 @@ func main() {
 	balancerConfig := &BalancerConfig{
 		Services: []Service{
 			{
-				Name: "test-service",
+				Name: "demo-service",
 				Replicas: []string{
 					"http://localhost:8081",
 				},
@@ -155,7 +155,7 @@ func main() {
 	gobalancer.HandleRequests()
 
 	// define http server and utilize the handler of the balancer (gin handler at the end)
-	balancerServer := CreateServer(fmt.Sprintf("%d", *port), gobalancer)
+	balancerServer := CreateServer(fmt.Sprintf(":%d", *port), gobalancer)
 
 	// init the server and handler unexpected errors
 	if err := InitServer(balancerServer); err != nil {
