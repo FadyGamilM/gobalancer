@@ -48,21 +48,18 @@ func NewBalancer(c *config.BalancerConfig) *Balancer {
 	}
 }
 
-func (b *Balancer) HandleRequests() {
-	// the passed method is the same as serverHttp method
-	b.Configs.Engine.GET("/", func(c *gin.Context) {
-		req := c.Request
-		resp := c.Writer
+func (b *Balancer) BalanceLoad(c *gin.Context) {
+	req := c.Request
+	resp := c.Writer
 
-		// ==> logging
-		log.Info("receiving a new request to host [load balancer host] >> %s", req.Host)
+	// ==> logging
+	log.Info("receiving a new request to host [load balancer host] >> %s", req.Host)
 
-		// 1. read request path  = host:port/service_a/rest_of_url
-		// 2. load balance against the service_a and the url will be = host{i}:port{i}/rest_of_url
-		// ==> so we have multiple servers (Hosts) host the same service (aka horizontial scalling)
-		nextServer := b.ServerList.NextServer()
-		log.Println("forwarding the request to the server number >> ", nextServer)
-		// 3. forward the request to the proxy of the server
-		b.ServerList.Servers[nextServer].Proxy.ServeHTTP(resp, req)
-	})
+	// 1. read request path  = host:port/service_a/rest_of_url
+	// 2. load balance against the service_a and the url will be = host{i}:port{i}/rest_of_url
+	// ==> so we have multiple servers (Hosts) host the same service (aka horizontial scalling)
+	nextServer := b.ServerList.NextServer()
+	log.Println("forwarding the request to the server number >> ", nextServer)
+	// 3. forward the request to the proxy of the server
+	b.ServerList.Servers[nextServer].Proxy.ServeHTTP(resp, req)
 }

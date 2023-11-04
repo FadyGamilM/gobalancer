@@ -16,7 +16,7 @@ type Service struct {
 type BalancerConfig struct {
 	*gin.Engine
 	Services []Service `yaml:"services"`
-	Strategy string `yaml:"strategy"`
+	Strategy string    `yaml:"strategy"`
 }
 
 type Server struct {
@@ -37,6 +37,6 @@ func (sl *ServersList) NextServer() uint32 {
 	// lets say we have 3 servers
 	// current goes from 0 -> 1 -> 2
 	// now current is 3 so we should forward to the server number 0 (following the round robin)
-	next = next % uint32(len(sl.Servers)) // handle wraparound using modulo operator
+	next = (next - 1) % uint32(len(sl.Servers)) // handle wraparound using modulo operator
 	return next
 }
