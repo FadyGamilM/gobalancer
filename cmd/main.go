@@ -31,22 +31,28 @@ func main() {
 	if err != nil {
 		log.Errorf("error opening the yaml config file >> %v", err)
 	}
-	_, err = pkg.LoadYamlConfigs(yamlFile)
+	configs, err := pkg.LoadYamlConfigs(yamlFile)
 	if err != nil {
 		log.Errorf("error reading the yaml configs >> %v", err)
 	}
 
+	// balancerConfig := &config.BalancerConfig{
+	// 	Engine: router,
+	// 	Services: []config.Service{
+	// 		{
+	// 			Name: "demo-service",
+	// 			Replicas: []string{
+	// 				"http://localhost:8081",
+	// 				"http://localhost:8082",
+	// 			},
+	// 		},
+	// 	},
+	// }
+
 	balancerConfig := &config.BalancerConfig{
-		Engine: router,
-		Services: []config.Service{
-			{
-				Name: "demo-service",
-				Replicas: []string{
-					"http://localhost:8081",
-					"http://localhost:8082",
-				},
-			},
-		},
+		Engine:   router,
+		Services: configs.Services,
+		Strategy: configs.Strategy,
 	}
 
 	// define the go-balancer type

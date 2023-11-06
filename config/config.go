@@ -11,6 +11,8 @@ import (
 type Service struct {
 	Name     string   `yaml:"name"`
 	Replicas []string `yaml:"replicas"`
+	// => each service should have some matcher so when the url path contains this matcher, we forward the request to this service
+	Matcher string `yaml:"matcher"`
 }
 
 type BalancerConfig struct {
@@ -30,6 +32,8 @@ type ServersList struct {
 	// the current server the request will be forwareded to
 	// -> i will use round robin for now
 	Current uint32
+
+	ServiceName string
 }
 
 func (sl *ServersList) NextServer() uint32 {
