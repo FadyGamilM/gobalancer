@@ -22,6 +22,9 @@ type Balancer struct {
 }
 
 func NewBalancer(c *config.BalancerConfig) *Balancer {
+	// initialize the strategies supported by this laod-balancer
+	config.InitBalancingStrategies()
+
 	// initialize list of all servers of all services with 0 servers
 	servers_perService := make(map[ServiceMatcherName]*config.ServersList, 0)
 
@@ -48,9 +51,9 @@ func NewBalancer(c *config.BalancerConfig) *Balancer {
 		}
 		// now we setupped all the servers for all replicas (server per replica) of the current service, lets add the servers to this service via the matcher
 		servers_perService[ServiceMatcherName(service.Matcher)] = &config.ServersList{
-			Servers:     servers,
-			Current:     uint32(0),
-			ServiceName: service.Name,
+			Servers:           servers,
+			ServiceName:       service.Name,
+			BalancingStrategy: config.LoadStrategy(c.Strategy),
 		}
 	}
 	// now setup the entire balancer structure
@@ -95,8 +98,8 @@ func (b *Balancer) BalanceLoad(c *gin.Context) {
 	// 1. read request path  = host:port/service_a/rest_of_url
 	// 2. load balance against the service_a and the url will be = host{i}:port{i}/rest_of_url
 	// ==> so we have multiple servers (Hosts) host the same service (aka horizontial scalling)
-	nextServer := serversList.NextServer()
+	nextServer, err := serversList.BalancingStrategy.NextServer(serversList.Servers)
 	log.Println("forwarding the request to the server number >> ", nextServer)
 	// 3. forward the request to the proxy of the server
-	serversList.Servers[nextServer].Proxy.ServeHTTP(resp, req)
+	nextServer.Proxy.ServeHTTP(resp, req)
 }
